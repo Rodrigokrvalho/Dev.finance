@@ -5,6 +5,7 @@ const Modal = {
     },
     close(){
         document.querySelector('.modal-overlay').classList.remove('active')
+        document.querySelector('.modal-overlay-edit').classList.remove('active')
     }
 }
 
@@ -22,34 +23,43 @@ const transaction = [
     {
         description: 'Luz',
         amount: -50000,
+        paymentForm: 'debito',
         date: '23/01/2021'
     },
     
     {
         description: 'Website',
         amount: 500000,
+        paymentForm: 'debito',
         date: '23/01/2021'
     },
 
     {
         description: 'Internet',
         amount: -20000,
+        paymentForm: 'debito',
         date: '23/01/2021'
     },
 
     {
         description: 'App',
         amount: 200040,
+        paymentForm: 'debito',
         date: '23/01/2021'
     }]
 
 const Transaction = {
-    all: Storage.get(),
+    all: transaction,
 
     add(transaction){
         Transaction.all.push(transaction)
         
         App.reload()
+    },
+
+    edit(index, transaction){
+        Transaction.remove(index)
+        Transaction.add(transaction)
     },
 
     remove(index){
@@ -100,6 +110,7 @@ const DOM = {
         `   
             <td class="description">${transaction.description}</td>
             <td class="${CSSclass}">${amount}</td>
+            <td class="paymentForm">${transaction.paymentForm}</td>
             <td class="date">${transaction.date}</td>
             <td><img onclick="Transaction.remove(${index})" src="./assets/minus.svg" alt="Remover Transação"></td>
         `
@@ -157,39 +168,58 @@ const Form = {
     description: document.querySelector('input#description'),
     amount: document.querySelector('input#amount'),
     date: document.querySelector('input#date'),
+    paymentForm: document.querySelector('input#paymentForm'),
+
 
     getValues() {
         return {
             description: Form.description.value,
             amount: Form.amount.value,
-            date: Form.date.value
+            date: Form.date.value,
+            paymentForm: Form.paymentForm.value
         }
     },
 
     validateFields() {
-        const { description, amount, date } = Form.getValues()
+        const { description, amount, paymentForm, date } = Form.getValues()
         
         if( description.trim() === "" || 
             amount.trim() === "" || 
+            paymentForm.trim() === "" ||
             date.trim() === "" ) {
                 throw new Error("Por favor, preencha todos os campos")
         }
     },
 
     formatValues() {
-        let {description, amount, date} = Form.getValues()
+        let {description, amount, paymentForm, date} = Form.getValues()
         
         amount = Utils.formatAmount(amount)
 
         date = Utils.formatDate(date)
 
-        return {description, amount, date}
+        return {description, amount, paymentForm, date}
     },
 
     clearFields() {
         Form.description.value = ""
         Form.amount.value = ""
         Form.date.value = ""
+        Form.paymentForm.value = ""
+    },
+
+    editedSubmit(event){
+        event.preventDefault()
+
+        try{
+            Form.validateFields()
+            const transaction = Form.formatValues()
+            Transaction.edit(index, transaction)
+            Form.clearFields()
+            Modal.close()
+        } catch (error) {
+            alert(error.menssage)
+        }
     },
 
     submit(event) {
