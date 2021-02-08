@@ -1,11 +1,19 @@
+var lastIndex = 0
 const Modal = {
     //toogle pode subistituir as duas funções
     open(){
         document.querySelector('.modal-overlay').classList.add('active')
     },
+
+    openEdit(index){
+        document.querySelector('.modal-overlay-edit').classList.add('active')
+        Form.fillFields(index)
+    },
+
     close(){
         document.querySelector('.modal-overlay').classList.remove('active')
         document.querySelector('.modal-overlay-edit').classList.remove('active')
+        Form.clearFields()
     }
 }
 
@@ -49,7 +57,7 @@ const transaction = [
     }]
 
 const Transaction = {
-    all: transaction,
+    all: Storage.get(),
 
     add(transaction){
         Transaction.all.push(transaction)
@@ -108,10 +116,10 @@ const DOM = {
         const amount = Utils.formatCurrency(transaction.amount)
         const html = 
         `   
-            <td class="description">${transaction.description}</td>
-            <td class="${CSSclass}">${amount}</td>
-            <td class="paymentForm">${transaction.paymentForm}</td>
-            <td class="date">${transaction.date}</td>
+            <td class="description" onclick="Modal.openEdit(${index})">${transaction.description}</td>
+            <td class="${CSSclass}" onclick="Modal.openEdit(${index})">${amount}</td>
+            <td class="paymentForm" onclick="Modal.openEdit(${index})">${transaction.paymentForm}</td>
+            <td class="date" onclick="Modal.openEdit(${index})">${transaction.date}</td>
             <td><img onclick="Transaction.remove(${index})" src="./assets/minus.svg" alt="Remover Transação"></td>
         `
 
@@ -143,9 +151,20 @@ const Utils = {
         return Math.round(value)
     },
 
+    formatToExibitionAmount(value) {
+        value = Number(value) / 100
+
+        return `${Number(value).toFixed(2)}`
+    },
+
     formatDate(date) {
         const splittedDate = date.split("-")
         return `${splittedDate[2]}/${splittedDate[1]}/${splittedDate[0]}`
+    },
+
+    formatDateToExibition(date) {
+        const splittedDate = date.split("/")
+        return `${splittedDate[2]}-${splittedDate[1]}-${splittedDate[0]}`
     },
 
     formatCurrency(value) {
@@ -170,6 +189,10 @@ const Form = {
     date: document.querySelector('input#date'),
     paymentForm: document.querySelector('input#paymentForm'),
 
+    descriptionEdit: document.querySelector('input#descriptionEdit'),
+    amountEdit: document.querySelector('input#amountEdit'),
+    dateEdit: document.querySelector('input#dateEdit'),
+    paymentFormEdit: document.querySelector('input#paymentFormEdit'),
 
     getValues() {
         return {
@@ -178,6 +201,23 @@ const Form = {
             date: Form.date.value,
             paymentForm: Form.paymentForm.value
         }
+    },
+
+    getValuesEdit() {
+        return {
+            description: Form.descriptionEdit.value,
+            amount: Form.amountEdit.value,
+            date: Form.dateEdit.value,
+            paymentForm: Form.paymentFormEdit.value
+        }
+    },
+
+    setValues(description, amount, paymentForm, date){
+        Form.descriptionEdit.value = description
+        Form.amountEdit.value = amount
+        Form.paymentFormEdit.value = paymentForm
+        Form.dateEdit.value = date
+        
     },
 
     validateFields() {
@@ -191,6 +231,17 @@ const Form = {
         }
     },
 
+    validateFieldsEdited() {
+        const {description, amount, paymentForm, date} = Form.getValuesEdit()
+
+        if( description.trim() === "" || 
+            amount.trim() === "" || 
+            paymentForm.trim() === "" ||
+            date.trim() === "" ) {
+                throw new Error("Por favor, preencha todos os campos")
+        }        
+    },
+
     formatValues() {
         let {description, amount, paymentForm, date} = Form.getValues()
         
@@ -201,6 +252,17 @@ const Form = {
         return {description, amount, paymentForm, date}
     },
 
+    formatValuesEdited() {
+        let {description, amount, paymentForm, date} = Form.getValuesEdit()
+        
+        amount = Utils.formatAmount(amount)
+
+        date = Utils.formatDate(date)
+
+        return {description, amount, paymentForm, date}
+
+    },
+
     clearFields() {
         Form.description.value = ""
         Form.amount.value = ""
@@ -208,18 +270,23 @@ const Form = {
         Form.paymentForm.value = ""
     },
 
+    fillFields(index) {
+        let transactions = {}
+        transactions = transaction[index]
+        Form.setValues(transactions.description, Utils.formatToExibitionAmount(transactions.amount), transactions.paymentForm, Utils.formatDateToExibition(transactions.date))
+        lastIndex = index
+    },
+
     editedSubmit(event){
         event.preventDefault()
 
-        try{
-            Form.validateFields()
-            const transaction = Form.formatValues()
-            Transaction.edit(index, transaction)
+            Form.validateFieldsEdited()
+            const transaction = Form.formatValuesEdited()
+            Transaction.edit(lastIndex, transaction)
+            console.log(transaction, lastIndex)
             Form.clearFields()
             Modal.close()
-        } catch (error) {
-            alert(error.menssage)
-        }
+        
     },
 
     submit(event) {
@@ -229,6 +296,7 @@ const Form = {
             Form.validateFields()
             const transaction = Form.formatValues()
             Transaction.add(transaction)
+            console.log(transaction, lastIndex)
             Form.clearFields()
             Modal.close()
         } catch (error) {

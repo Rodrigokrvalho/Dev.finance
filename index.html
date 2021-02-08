@@ -112,8 +112,8 @@
                     </div>
 
                     <div class="input-group">
-                        <label class="sr-only" for="paymentForm">Forma de Pagamento</label>
-                        <input type="text" id="paymentForm" name="paymentForm" placeholder="Forma de Pagamento">
+                        <label class="sr-only" for="paymentFormEdit">Forma de Pagamento</label>
+                        <input type="text" id="paymentFormEdit" name="paymentFormEdit" placeholder="Forma de Pagamento">
                     </div>
 
                     <div class="input-group">
@@ -123,7 +123,7 @@
 
                     <div class="input-group actions">
                         <a href="#" onclick="Modal.close()" class="button cancel">Sair</a>
-                        <button>Salvar</button>
+                        <button onclick="Form.editedSubmit(event)">Salvar</button>
                     </div>
                 </form>
             </div>
